@@ -47,7 +47,6 @@ contract PeerInsuranceRegistry {
     uint256 public totalPaid;
     address public pendingAdmin;
 
-    // Events
     event PolicyIssued(uint256 indexed policyId, address indexed holder, uint128 coverage, uint64 endTime, bytes32 termsHash);
     event PolicyCancelled(uint256 indexed policyId, address indexed by, bytes32 reasonHash);
     event PolicyExpired(uint256 indexed policyId);
@@ -61,7 +60,6 @@ contract PeerInsuranceRegistry {
     event AdminProposed(address indexed newAdmin);
     event AdminChanged(address indexed oldAdmin, address indexed newAdmin);
 
-    // Custom Errors
     error NotAdmin();
     error NotUnderwriter();
     error NotAssessor();
