@@ -45,6 +45,7 @@ contract PeerInsuranceRegistry {
     uint256 public claimCount;
     uint256 public reserved;
     uint256 public totalPaid;
+    address public pendingAdmin;
 
     // Events
     event PolicyIssued(uint256 indexed policyId, address indexed holder, uint128 coverage, uint64 endTime, bytes32 termsHash);
@@ -104,6 +105,11 @@ contract PeerInsuranceRegistry {
         if (!isAssessor[msg.sender]) revert NotAssessor();
         _;
     }
+
+    modifier onlyAdmin() {
+    if (msg.sender != admin) revert NotAdmin();
+    _;
+}
 
     function buyPolicy(bytes32 termsHash, uint128 coverage, uint64 duration) external payable returns (uint256) {
         if (termsHash == 0) revert ZeroHash();
@@ -200,4 +206,43 @@ contract PeerInsuranceRegistry {
         available = balance > res ? balance - res : 0;
         paid = totalPaid;
     }
+
+function grantRole(Role role, address account) external onlyAdmin {
+    if (account == address(0)) revert ZeroAddress();
+    if (role == Role.Underwriter) {
+        if (isUnderwriter[account]) revert RoleAlreadyGranted();
+        isUnderwriter[account] = true;
+    } else {
+        if (isAssessor[account]) revert RoleAlreadyGranted();
+        isAssessor[account] = true;
+    }
+    emit RoleGranted(role, account);
+}
+
+function revokeRole(Role role, address account) external onlyAdmin {
+    if (account == address(0)) revert ZeroAddress();
+    if (role == Role.Underwriter) {
+        if (!isUnderwriter[account]) revert RoleNotGranted();
+        isUnderwriter[account] = false;
+    } else {
+        if (!isAssessor[account]) revert RoleNotGranted();
+        isAssessor[account] = false;
+    }
+    emit RoleRevoked(role, account);
+}
+
+function proposeAdmin(address newAdmin) external onlyAdmin {
+    if (newAdmin == address(0)) revert ZeroAddress();
+    pendingAdmin = newAdmin;
+    emit AdminProposed(newAdmin);
+}
+
+function acceptAdmin() external {
+    if (msg.sender != pendingAdmin) revert NotPendingAdmin();
+    address oldAdmin = admin;
+    admin = msg.sender;
+    pendingAdmin = address(0);
+    emit AdminChanged(oldAdmin, msg.sender);
+}
+
 }
