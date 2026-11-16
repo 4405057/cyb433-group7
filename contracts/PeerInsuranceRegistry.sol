@@ -257,4 +257,54 @@ function acceptAdmin() external {
     emit AdminChanged(oldAdmin, msg.sender);
 }
 
+function approveClaim(uint256 claimId) external onlyAssessor {
+    Claim storage c = claims[claimId];
+    if (c.status == ClaimStatus.None) revert ClaimNotFound(claimId);
+    if (c.status != ClaimStatus.Filed) revert InvalidClaimStatus(c.status);
+    if (msg.sender == c.claimant) revert SelfReviewNotAllowed();
+    if (hasApproved[claimId][msg.sender]) revert AlreadyApproved();
+
+    hasApproved[claimId][msg.sender] = true;
+    uint8 approvals = c.approvals + 1;
+    c.approvals = approvals;
+    emit ClaimApprovalAdded(claimId, msg.sender, approvals);
+
+    if (approvals == REQUIRED_APPROVALS) {
+        uint256 currentReserved = reserved;
+        uint256 balance = address(this).balance;
+        uint256 available = balance > currentReserved ? balance - currentReserved : 0;
+        if (c.amount > available) revert InsufficientPool(available, c.amount);
+        reserved = currentReserved + c.amount;
+        c.status = ClaimStatus.Approved;
+        emit ClaimApproved(claimId, c.amount);
+    }
+}
+
+function rejectClaim(uint256 claimId) external onlyAssessor {
+    Claim storage c = claims[claimId];
+    if (c.status == ClaimStatus.None) revert ClaimNotFound(claimId);
+    if (c.status != ClaimStatus.Filed) revert InvalidClaimStatus(c.status);
+    if (msg.sender == c.claimant) revert SelfReviewNotAllowed();
+
+    c.status = ClaimStatus.Rejected;
+    emit ClaimRejected(claimId, msg.sender);
+}
+
+function withdrawPayout(uint256 claimId) external {
+    Claim storage c = claims[claimId];
+    if (c.status == ClaimStatus.None) revert ClaimNotFound(claimId);
+    if (msg.sender != c.claimant) revert NotClaimant();
+    if (c.status != ClaimStatus.Approved) revert InvalidClaimStatus(c.status);
+
+    uint128 amount = c.amount;
+    c.status = ClaimStatus.Paid;
+    policies[c.policyId].status = PolicyStatus.Claimed;
+    reserved -= amount;
+    totalPaid += amount;
+    emit PayoutWithdrawn(claimId, msg.sender, amount);
+
+    (bool ok, ) = msg.sender.call{value: amount}("");
+    if (!ok) revert TransferFailed();
+}
+
 }
