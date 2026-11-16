@@ -169,30 +169,42 @@ contract PeerInsuranceRegistry {
         emit PolicyExpired(id);
     }
 
-    function fileClaim(uint256 policyId, bytes32 evidenceHash, uint128 amount) external returns (uint256) {
-        Policy memory p = policies[policyId];
-        if (p.status == PolicyStatus.None) revert PolicyNotFound(policyId);
-        if (msg.sender != p.holder) revert NotPolicyHolder();
-        if (p.status != PolicyStatus.Active) revert InvalidPolicyStatus(p.status);
-        if (evidenceHash == 0) revert ZeroHash();
-        if (amount == 0) revert InvalidAmount();
+function fileClaim(uint256 policyId, bytes32 evidenceHash, uint128 amount) external returns (uint256) {
+    Policy memory p = policies[policyId];
+    if (p.status == PolicyStatus.None) revert PolicyNotFound(policyId);
+    if (msg.sender != p.holder) revert NotPolicyHolder();
+    if (p.status != PolicyStatus.Active) revert InvalidPolicyStatus(p.status);
+    if (evidenceHash == 0) revert ZeroHash();
+    if (amount == 0) revert InvalidAmount();
 
-        claimCount++;
-        uint256 claimId = claimCount;
+    uint256 existing = claimOfPolicy[policyId];
+    if (existing != 0) revert ClaimAlreadyFiled(existing);
 
-        claims[claimId] = Claim({
-            policyId: policyId,
-            claimant: msg.sender,
-            evidenceHash: evidenceHash,
-            amount: amount,
-            filedAt: uint64(block.timestamp),
-            approvals: 0,
-            status: ClaimStatus.Filed
-        });
+    uint64 availableAt = p.startTime + WAITING_PERIOD;
+    if (block.timestamp < availableAt) revert ClaimTooEarly(availableAt);
+    if (block.timestamp > p.endTime) revert ClaimWindowClosed();
 
-        emit ClaimFiled(claimId, policyId, msg.sender, amount, evidenceHash);
-        return claimId;
-    }
+    if (amount > p.coverage) revert AmountExceedsCoverage();
+    if (evidenceUsed[evidenceHash]) revert EvidenceAlreadyUsed();
+
+    claimCount++;
+    uint256 claimId = claimCount;
+    evidenceUsed[evidenceHash] = true;
+    claimOfPolicy[policyId] = claimId;
+
+    claims[claimId] = Claim({
+        policyId: policyId,
+        claimant: msg.sender,
+        evidenceHash: evidenceHash,
+        amount: amount,
+        filedAt: uint64(block.timestamp),
+        approvals: 0,
+        status: ClaimStatus.Filed
+    });
+
+    emit ClaimFiled(claimId, policyId, msg.sender, amount, evidenceHash);
+    return claimId;
+}
 
     function getClaim(uint256 id) external view returns (Claim memory) {
         Claim memory c = claims[id];
