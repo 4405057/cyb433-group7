@@ -45,6 +45,7 @@ contract PeerInsuranceRegistry {
     uint256 public claimCount;
     uint256 public reserved;
     uint256 public totalPaid;
+    address public pendingAdmin;
 
     // Events
     event PolicyIssued(uint256 indexed policyId, address indexed holder, uint128 coverage, uint64 endTime, bytes32 termsHash);
@@ -105,6 +106,11 @@ contract PeerInsuranceRegistry {
         _;
     }
 
+    modifier onlyAdmin() {
+    if (msg.sender != admin) revert NotAdmin();
+    _;
+}
+
     function buyPolicy(bytes32 termsHash, uint128 coverage, uint64 duration) external payable returns (uint256) {
         if (termsHash == 0) revert ZeroHash();
         if (coverage == 0) revert InvalidAmount();
@@ -163,30 +169,42 @@ contract PeerInsuranceRegistry {
         emit PolicyExpired(id);
     }
 
-    function fileClaim(uint256 policyId, bytes32 evidenceHash, uint128 amount) external returns (uint256) {
-        Policy memory p = policies[policyId];
-        if (p.status == PolicyStatus.None) revert PolicyNotFound(policyId);
-        if (msg.sender != p.holder) revert NotPolicyHolder();
-        if (p.status != PolicyStatus.Active) revert InvalidPolicyStatus(p.status);
-        if (evidenceHash == 0) revert ZeroHash();
-        if (amount == 0) revert InvalidAmount();
+function fileClaim(uint256 policyId, bytes32 evidenceHash, uint128 amount) external returns (uint256) {
+    Policy memory p = policies[policyId];
+    if (p.status == PolicyStatus.None) revert PolicyNotFound(policyId);
+    if (msg.sender != p.holder) revert NotPolicyHolder();
+    if (p.status != PolicyStatus.Active) revert InvalidPolicyStatus(p.status);
+    if (evidenceHash == 0) revert ZeroHash();
+    if (amount == 0) revert InvalidAmount();
 
-        claimCount++;
-        uint256 claimId = claimCount;
+    uint256 existing = claimOfPolicy[policyId];
+    if (existing != 0) revert ClaimAlreadyFiled(existing);
 
-        claims[claimId] = Claim({
-            policyId: policyId,
-            claimant: msg.sender,
-            evidenceHash: evidenceHash,
-            amount: amount,
-            filedAt: uint64(block.timestamp),
-            approvals: 0,
-            status: ClaimStatus.Filed
-        });
+    uint64 availableAt = p.startTime + WAITING_PERIOD;
+    if (block.timestamp < availableAt) revert ClaimTooEarly(availableAt);
+    if (block.timestamp > p.endTime) revert ClaimWindowClosed();
 
-        emit ClaimFiled(claimId, policyId, msg.sender, amount, evidenceHash);
-        return claimId;
-    }
+    if (amount > p.coverage) revert AmountExceedsCoverage();
+    if (evidenceUsed[evidenceHash]) revert EvidenceAlreadyUsed();
+
+    claimCount++;
+    uint256 claimId = claimCount;
+    evidenceUsed[evidenceHash] = true;
+    claimOfPolicy[policyId] = claimId;
+
+    claims[claimId] = Claim({
+        policyId: policyId,
+        claimant: msg.sender,
+        evidenceHash: evidenceHash,
+        amount: amount,
+        filedAt: uint64(block.timestamp),
+        approvals: 0,
+        status: ClaimStatus.Filed
+    });
+
+    emit ClaimFiled(claimId, policyId, msg.sender, amount, evidenceHash);
+    return claimId;
+}
 
     function getClaim(uint256 id) external view returns (Claim memory) {
         Claim memory c = claims[id];
@@ -200,4 +218,93 @@ contract PeerInsuranceRegistry {
         available = balance > res ? balance - res : 0;
         paid = totalPaid;
     }
+
+function grantRole(Role role, address account) external onlyAdmin {
+    if (account == address(0)) revert ZeroAddress();
+    if (role == Role.Underwriter) {
+        if (isUnderwriter[account]) revert RoleAlreadyGranted();
+        isUnderwriter[account] = true;
+    } else {
+        if (isAssessor[account]) revert RoleAlreadyGranted();
+        isAssessor[account] = true;
+    }
+    emit RoleGranted(role, account);
+}
+
+function revokeRole(Role role, address account) external onlyAdmin {
+    if (account == address(0)) revert ZeroAddress();
+    if (role == Role.Underwriter) {
+        if (!isUnderwriter[account]) revert RoleNotGranted();
+        isUnderwriter[account] = false;
+    } else {
+        if (!isAssessor[account]) revert RoleNotGranted();
+        isAssessor[account] = false;
+    }
+    emit RoleRevoked(role, account);
+}
+
+function proposeAdmin(address newAdmin) external onlyAdmin {
+    if (newAdmin == address(0)) revert ZeroAddress();
+    pendingAdmin = newAdmin;
+    emit AdminProposed(newAdmin);
+}
+
+function acceptAdmin() external {
+    if (msg.sender != pendingAdmin) revert NotPendingAdmin();
+    address oldAdmin = admin;
+    admin = msg.sender;
+    pendingAdmin = address(0);
+    emit AdminChanged(oldAdmin, msg.sender);
+}
+
+function approveClaim(uint256 claimId) external onlyAssessor {
+    Claim storage c = claims[claimId];
+    if (c.status == ClaimStatus.None) revert ClaimNotFound(claimId);
+    if (c.status != ClaimStatus.Filed) revert InvalidClaimStatus(c.status);
+    if (msg.sender == c.claimant) revert SelfReviewNotAllowed();
+    if (hasApproved[claimId][msg.sender]) revert AlreadyApproved();
+
+    hasApproved[claimId][msg.sender] = true;
+    uint8 approvals = c.approvals + 1;
+    c.approvals = approvals;
+    emit ClaimApprovalAdded(claimId, msg.sender, approvals);
+
+    if (approvals == REQUIRED_APPROVALS) {
+        uint256 currentReserved = reserved;
+        uint256 balance = address(this).balance;
+        uint256 available = balance > currentReserved ? balance - currentReserved : 0;
+        if (c.amount > available) revert InsufficientPool(available, c.amount);
+        reserved = currentReserved + c.amount;
+        c.status = ClaimStatus.Approved;
+        emit ClaimApproved(claimId, c.amount);
+    }
+}
+
+function rejectClaim(uint256 claimId) external onlyAssessor {
+    Claim storage c = claims[claimId];
+    if (c.status == ClaimStatus.None) revert ClaimNotFound(claimId);
+    if (c.status != ClaimStatus.Filed) revert InvalidClaimStatus(c.status);
+    if (msg.sender == c.claimant) revert SelfReviewNotAllowed();
+
+    c.status = ClaimStatus.Rejected;
+    emit ClaimRejected(claimId, msg.sender);
+}
+
+function withdrawPayout(uint256 claimId) external {
+    Claim storage c = claims[claimId];
+    if (c.status == ClaimStatus.None) revert ClaimNotFound(claimId);
+    if (msg.sender != c.claimant) revert NotClaimant();
+    if (c.status != ClaimStatus.Approved) revert InvalidClaimStatus(c.status);
+
+    uint128 amount = c.amount;
+    c.status = ClaimStatus.Paid;
+    policies[c.policyId].status = PolicyStatus.Claimed;
+    reserved -= amount;
+    totalPaid += amount;
+    emit PayoutWithdrawn(claimId, msg.sender, amount);
+
+    (bool ok, ) = msg.sender.call{value: amount}("");
+    if (!ok) revert TransferFailed();
+}
+
 }
