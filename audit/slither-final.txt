@@ -1,0 +1,35 @@
+Multiple frameworks detected: solc, Solc-json. Using solc (highest priority). Use --compile-force-framework to override.
+'solc --version' running
+'solc contracts/PeerInsuranceRegistry.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,C:\Users\fahd5\cyb433-work\cyb433-group7\contracts' running
+INFO:Detectors:
+Detector: timestamp
+PeerInsuranceRegistry.verifyPolicy(uint256) (contracts/PeerInsuranceRegistry.sol#145-150) uses timestamp for comparisons
+	Dangerous comparisons:
+	- p.status != PolicyStatus.Active (contracts/PeerInsuranceRegistry.sol#147)
+	- block.timestamp > p.endTime (contracts/PeerInsuranceRegistry.sol#148)
+PeerInsuranceRegistry.markExpired(uint256) (contracts/PeerInsuranceRegistry.sol#161-169) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp <= p.endTime (contracts/PeerInsuranceRegistry.sol#165)
+PeerInsuranceRegistry.fileClaim(uint256,bytes32,uint128) (contracts/PeerInsuranceRegistry.sol#171-206) uses timestamp for comparisons
+	Dangerous comparisons:
+	- msg.sender != p.holder (contracts/PeerInsuranceRegistry.sol#174)
+	- p.status != PolicyStatus.Active (contracts/PeerInsuranceRegistry.sol#175)
+	- block.timestamp < availableAt (contracts/PeerInsuranceRegistry.sol#183)
+	- block.timestamp > p.endTime (contracts/PeerInsuranceRegistry.sol#184)
+	- amount > p.coverage (contracts/PeerInsuranceRegistry.sol#186)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+INFO:Detectors:
+Detector: solc-version
+Version constraint ^0.8.20 contains known severe issues (https://solidity.readthedocs.io/en/latest/bugs.html)
+	- VerbatimInvalidDeduplication
+	- FullInlinerNonExpressionSplitArgumentEvaluationOrder
+	- MissingSideEffectsOnSelectorAccess.
+It is used by:
+	- ^0.8.20 (contracts/PeerInsuranceRegistry.sol#2)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-versions-of-solidity
+INFO:Detectors:
+Detector: low-level-calls
+Low level call in PeerInsuranceRegistry.withdrawPayout(uint256) (contracts/PeerInsuranceRegistry.sol#292-307):
+	- (ok,None) = msg.sender.call{value: amount}() (contracts/PeerInsuranceRegistry.sol#305)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+INFO:Slither:contracts/PeerInsuranceRegistry.sol analyzed (1 contracts with 102 detectors), 5 result(s) found
