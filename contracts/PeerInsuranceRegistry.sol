@@ -115,7 +115,8 @@ contract PeerInsuranceRegistry {
         if (duration < MIN_DURATION || duration > MAX_DURATION) revert InvalidDuration();
 
         uint256 requiredPremium = (uint256(coverage) * PREMIUM_BPS) / BPS_DENOMINATOR;
-        if (msg.value != requiredPremium) revert WrongPremium(msg.value, requiredPremium);
+        if (requiredPremium == 0 || msg.value != requiredPremium)
+        revert WrongPremium(msg.value, requiredPremium);
 
         policyCount++;
         uint256 policyId = policyCount;
@@ -137,7 +138,7 @@ contract PeerInsuranceRegistry {
 
     function getPolicy(uint256 id) external view returns (Policy memory) {
         Policy memory p = policies[id];
-        if (p.status == PolicyStatus.None) revert PolicyNotFound(id);
+       if (id == 0 || id > policyCount) revert PolicyNotFound(id);
         return p;
     }
 
@@ -169,7 +170,7 @@ contract PeerInsuranceRegistry {
 
 function fileClaim(uint256 policyId, bytes32 evidenceHash, uint128 amount) external returns (uint256) {
     Policy memory p = policies[policyId];
-    if (p.status == PolicyStatus.None) revert PolicyNotFound(policyId);
+    if (policyId == 0 || policyId > policyCount) revert PolicyNotFound(policyId);
     if (msg.sender != p.holder) revert NotPolicyHolder();
     if (p.status != PolicyStatus.Active) revert InvalidPolicyStatus(p.status);
     if (evidenceHash == 0) revert ZeroHash();
@@ -206,7 +207,7 @@ function fileClaim(uint256 policyId, bytes32 evidenceHash, uint128 amount) exter
 
     function getClaim(uint256 id) external view returns (Claim memory) {
         Claim memory c = claims[id];
-        if (c.status == ClaimStatus.None) revert ClaimNotFound(id);
+        if (id == 0 || id > claimCount) revert ClaimNotFound(id);
         return c;
     }
 

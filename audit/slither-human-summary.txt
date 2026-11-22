@@ -1,0 +1,22 @@
+Multiple frameworks detected: solc, Solc-json. Using solc (highest priority). Use --compile-force-framework to override.
+'solc --version' running
+'solc contracts/PeerInsuranceRegistry.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,C:\Users\fahd5\cyb433-work\cyb433-group7\contracts' running
+INFO:Printers:
+Compiled with solc
+Total number of contracts in source files: 1
+Source lines of code (SLOC) in source files: 263
+Number of  assembly lines: 0
+Number of optimization issues: 0
+Number of informational issues: 2
+Number of low issues: 3
+Number of medium issues: 0
+Number of high issues: 0
+
+
++-----------------------+-------------+------+------------+--------------+-------------+
+| Name                  | # functions | ERCS | ERC20 info | Complex code | Features    |
++-----------------------+-------------+------+------------+--------------+-------------+
+| PeerInsuranceRegistry | 17          |      |            | Yes          | Receive ETH |
+|                       |             |      |            |              | Send ETH    |
++-----------------------+-------------+------+------------+--------------+-------------+
+INFO:Slither:contracts/PeerInsuranceRegistry.sol analyzed (1 contracts)

@@ -1,0 +1,54 @@
+'npx hardhat clean' running (wd: C:\Users\fahd5\cyb433-work\cyb433-group7)
+'npx hardhat clean --global' running (wd: C:\Users\fahd5\cyb433-work\cyb433-group7)
+Problem executing hardhat: ◇ injected env (0) from .env
+◇ injected env (0) from .env
+
+'npx hardhat compile --force' running (wd: C:\Users\fahd5\cyb433-work\cyb433-group7)
+INFO:Detectors:
+Detector: incorrect-equality
+PeerInsuranceRegistry.fileClaim(uint256,bytes32,uint128) (contracts/PeerInsuranceRegistry.sol#170-205) uses a dangerous strict equality:
+	- p.status == PolicyStatus.None (contracts/PeerInsuranceRegistry.sol#172)
+PeerInsuranceRegistry.getClaim(uint256) (contracts/PeerInsuranceRegistry.sol#207-211) uses a dangerous strict equality:
+	- c.status == ClaimStatus.None (contracts/PeerInsuranceRegistry.sol#209)
+PeerInsuranceRegistry.getPolicy(uint256) (contracts/PeerInsuranceRegistry.sol#138-142) uses a dangerous strict equality:
+	- p.status == PolicyStatus.None (contracts/PeerInsuranceRegistry.sol#140)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+INFO:Detectors:
+Detector: timestamp
+PeerInsuranceRegistry.getPolicy(uint256) (contracts/PeerInsuranceRegistry.sol#138-142) uses timestamp for comparisons
+	Dangerous comparisons:
+	- p.status == PolicyStatus.None (contracts/PeerInsuranceRegistry.sol#140)
+PeerInsuranceRegistry.verifyPolicy(uint256) (contracts/PeerInsuranceRegistry.sol#144-149) uses timestamp for comparisons
+	Dangerous comparisons:
+	- p.status != PolicyStatus.Active (contracts/PeerInsuranceRegistry.sol#146)
+	- block.timestamp > p.endTime (contracts/PeerInsuranceRegistry.sol#147)
+PeerInsuranceRegistry.markExpired(uint256) (contracts/PeerInsuranceRegistry.sol#160-168) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp <= p.endTime (contracts/PeerInsuranceRegistry.sol#164)
+PeerInsuranceRegistry.fileClaim(uint256,bytes32,uint128) (contracts/PeerInsuranceRegistry.sol#170-205) uses timestamp for comparisons
+	Dangerous comparisons:
+	- p.status == PolicyStatus.None (contracts/PeerInsuranceRegistry.sol#172)
+	- msg.sender != p.holder (contracts/PeerInsuranceRegistry.sol#173)
+	- p.status != PolicyStatus.Active (contracts/PeerInsuranceRegistry.sol#174)
+	- block.timestamp < availableAt (contracts/PeerInsuranceRegistry.sol#182)
+	- block.timestamp > p.endTime (contracts/PeerInsuranceRegistry.sol#183)
+	- amount > p.coverage (contracts/PeerInsuranceRegistry.sol#185)
+PeerInsuranceRegistry.getClaim(uint256) (contracts/PeerInsuranceRegistry.sol#207-211) uses timestamp for comparisons
+	Dangerous comparisons:
+	- c.status == ClaimStatus.None (contracts/PeerInsuranceRegistry.sol#209)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+INFO:Detectors:
+Detector: solc-version
+Version constraint ^0.8.20 contains known severe issues (https://solidity.readthedocs.io/en/latest/bugs.html)
+	- VerbatimInvalidDeduplication
+	- FullInlinerNonExpressionSplitArgumentEvaluationOrder
+	- MissingSideEffectsOnSelectorAccess.
+It is used by:
+	- ^0.8.20 (contracts/PeerInsuranceRegistry.sol#2)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-versions-of-solidity
+INFO:Detectors:
+Detector: low-level-calls
+Low level call in PeerInsuranceRegistry.withdrawPayout(uint256) (contracts/PeerInsuranceRegistry.sol#291-306):
+	- (ok,None) = msg.sender.call{value: amount}() (contracts/PeerInsuranceRegistry.sol#304)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+INFO:Slither:. analyzed (1 contracts with 102 detectors), 10 result(s) found
