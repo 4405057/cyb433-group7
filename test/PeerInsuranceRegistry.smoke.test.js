@@ -16,13 +16,16 @@ describe("PeerInsuranceRegistry Smoke Tests", function () {
     const premium = (coverage * 500n) / 10000n;
     const termsHash = ethers.keccak256(ethers.toUtf8Bytes("terms-1"));
 
-    await expect(
-      registry.connect(member).buyPolicy(termsHash, coverage, 30 * 24 * 3600, { value: premium })
-    )
-      .to.emit(registry, "PolicyIssued")
-      .withArgs(1n, member.address, coverage, (val) => val > 0n, termsHash);
-  });
+    const tx = await registry
+  .connect(member)
+  .buyPolicy(termsHash, coverage, 30 * 24 * 3600, { value: premium });
 
+const receipt = await tx.wait();
+console.log("buyPolicy gasUsed:", receipt.gasUsed.toString());
+
+await expect(tx)
+  .to.emit(registry, "PolicyIssued")
+  .withArgs(1n, member.address, coverage, (val) => val > 0n, termsHash);    });
   it("Test 2: getPolicy returns the same holder, coverage and hash", async function () {
     const { registry, member } = await loadFixture(deployFixture);
     const coverage = ethers.parseEther("1.0");

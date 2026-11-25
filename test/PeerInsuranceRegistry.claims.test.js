@@ -20,9 +20,14 @@ describe("claims and rules", function () {
     const { registry, holder, coverage } = await loadFixture(deployFixture);
     const ev = ethers.keccak256(ethers.toUtf8Bytes("evidence-1"));
     await time.increase(7 * 24 * 3600 + 1);
-    await expect(registry.connect(holder).fileClaim(1, ev, coverage))
-      .to.emit(registry, "ClaimFiled")
-      .withArgs(1, 1, holder.address, coverage, ev);
+    const tx = await registry.connect(holder).fileClaim(1, ev, coverage);
+
+const receipt = await tx.wait();
+console.log("fileClaim gasUsed:", receipt.gasUsed.toString());
+
+await expect(tx)
+  .to.emit(registry, "ClaimFiled")
+  .withArgs(1, 1, holder.address, coverage, ev);
   });
 
   it("Test 7: R3 rejects claim before the waiting period", async function () {

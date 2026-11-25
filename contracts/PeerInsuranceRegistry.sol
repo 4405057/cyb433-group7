@@ -169,7 +169,7 @@ contract PeerInsuranceRegistry {
     }
 
 function fileClaim(uint256 policyId, bytes32 evidenceHash, uint128 amount) external returns (uint256) {
-    Policy memory p = policies[policyId];
+    Policy storage  p = policies[policyId];
     if (policyId == 0 || policyId > policyCount) revert PolicyNotFound(policyId);
     if (msg.sender != p.holder) revert NotPolicyHolder();
     if (p.status != PolicyStatus.Active) revert InvalidPolicyStatus(p.status);
