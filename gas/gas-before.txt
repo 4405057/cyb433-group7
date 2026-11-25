@@ -1,0 +1,8 @@
+Gas measurements before optimization
+===================================
+
+fileClaim
+Gas Used: 192549
+
+Note:
+A before-optimization measurement for buyPolicy was not recorded.

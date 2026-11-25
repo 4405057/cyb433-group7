@@ -1,0 +1,21 @@
+Gas measurements after optimization
+==================================
+
+fileClaim
+Gas Used: 190323
+
+buyPolicy
+Gas Used: 136655
+
+fileClaim comparison
+-------------------
+Before: 192549 gas
+After:  190323 gas
+Saved:  2226 gas
+Reduction: approximately 1.16%
+
+Optimization applied:
+Changed the Policy variable in fileClaim from memory to storage.
+
+Contract deployment
+Gas Used: 12907928
