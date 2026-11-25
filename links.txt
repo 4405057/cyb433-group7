@@ -1,0 +1,5 @@
+GitHub Repository:
+https://github.com/4405057/cyb433-group7
+
+Verified Sepolia Contract:
+https://sepolia.etherscan.io/address/0x8d61e5827e57840B33f53E2A9243A2827783B1C7

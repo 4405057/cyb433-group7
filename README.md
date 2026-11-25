@@ -98,3 +98,23 @@ The `fileClaim` function was optimized by changing the policy variable from memo
 - **After:** 190,323 gas
 - **Gas Saved:** 2,226 gas
 - **Reduction:** Approximately 1.16%
+## Testing and Security Analysis
+
+- Total Tests Passed: 28
+- Statement Coverage: 92.39%
+- Branch Coverage: 68.55%
+- Function Coverage: 94.74%
+- Line Coverage: 95.16%
+
+## Gas Reporter Results
+
+| Function | Average Gas |
+|---|---:|
+| buyPolicy | 134,212 |
+| fileClaim | 189,095 |
+| approveClaim | 65,333 |
+| cancelPolicy | 31,485 |
+| withdrawPayout | 67,668 |
+| grantRole | 48,186 |
+
+- PeerInsuranceRegistry Deployment (Gas Reporter): 1,844,000 Gas
