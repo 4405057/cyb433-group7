@@ -1,0 +1,20 @@
+Transaction 1: grantRole(Assessor)
+Hash: 0x0003adce2be59b909e2121c7be91cebdcfaccdb49f2162cd86caef5a3f3b65c5
+Gas Used: 130209
+Status: Success
+https://sepolia.etherscan.io/tx/0x0003adce2be59b909e2121c7be91cebdcfaccdb49f2162cd86caef5a3f3b65c5
+
+Transaction 2: buyPolicy
+Hash: 0xacaa233a5bda1b18776241462a68dbe47f1ddf60caeb9e1fc5eb28fb2d30fde2
+Gas Used: 576643
+Status: Success
+https://sepolia.etherscan.io/tx/0xacaa233a5bda1b18776241462a68dbe47f1ddf60caeb9e1fc5eb28fb2d30fde2
+
+Transaction 3: cancelPolicy
+Hash: 0x208cf61bf315f613cc9be8a05d897d86425bca105a7018cc0b7fabee10559a54
+Gas Used: 32685
+Status: Success
+https://sepolia.etherscan.io/tx/0x208cf61bf315f613cc9be8a05d897d86425bca105a7018cc0b7fabee10559a54
+
+Final Policy ID: 1
+Final Policy Status: Cancelled (2)
